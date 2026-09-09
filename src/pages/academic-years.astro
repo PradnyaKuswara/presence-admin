@@ -1,0 +1,8 @@
+---
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+import { AcademicYearManager } from '../features/academic-years/AcademicYearManager';
+---
+
+<DashboardLayout title="Master Tahun Ajaran Sekolah - PresenceSaaS" description="Pengelolaan tahun ajaran dan semester per sekolah.">
+  <AcademicYearManager client:load />
+</DashboardLayout>

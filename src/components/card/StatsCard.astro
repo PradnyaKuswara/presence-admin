@@ -1,0 +1,49 @@
+---
+import Card from './Card.astro';
+
+interface Props {
+  title: string;
+  value: string | number;
+  change?: string;
+  changeType?: 'positive' | 'negative' | 'neutral';
+  iconBg?: string;
+  class?: string;
+}
+
+const {
+  title,
+  value,
+  change,
+  changeType = 'positive',
+  iconBg = 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/60',
+  class: className = ''
+} = Astro.props;
+
+const changeColors = {
+  positive: 'text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/40 dark:border-emerald-800/60',
+  negative: 'text-rose-700 bg-rose-50 border-rose-200 dark:text-rose-400 dark:bg-rose-950/40 dark:border-rose-800/60',
+  neutral: 'text-slate-700 bg-slate-100 border-slate-200 dark:text-slate-400 dark:bg-slate-800 dark:border-slate-700'
+};
+---
+
+<Card class={`relative overflow-hidden hover:border-slate-300 dark:hover:border-slate-600 transition-colors ${className}`}>
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">{title}</p>
+      <h3 class="text-2xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">{value}</h3>
+      
+      {change && (
+        <div class="mt-2 flex items-center gap-1.5">
+          <span class:list={["text-xs px-2 py-0.5 rounded-md border font-medium", changeColors[changeType]]}>
+            {change}
+          </span>
+          <span class="text-[11px] text-slate-500 dark:text-slate-400">vs kemarin</span>
+        </div>
+      )}
+    </div>
+
+    <div class:list={["p-2.5 rounded-md border flex items-center justify-center shrink-0", iconBg]}>
+      <slot name="icon" />
+    </div>
+  </div>
+</Card>

@@ -1,0 +1,8 @@
+---
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+import { ClassManager } from '../features/classes/ClassManager';
+---
+
+<DashboardLayout title="Master Kelas & Rombel - PresenceSaaS" description="Pengelolaan data kelas, rombel, wali kelas, dan kapasitas ruangan per sekolah.">
+  <ClassManager client:load />
+</DashboardLayout>

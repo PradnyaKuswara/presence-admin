@@ -1,0 +1,137 @@
+---
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+import Card from '../components/card/Card.astro';
+import Badge from '../components/badge/Badge.astro';
+import Button from '../components/button/Button.astro';
+import Input from '../components/input/Input.astro';
+import TextArea from '../components/input/TextArea.astro';
+import Pagination from '../components/pagination/Pagination';
+import { mockTelegramLogs } from '../data/mockSaaSData';
+---
+
+<DashboardLayout title="Telegram Bot & Notifikasi - PresenceSaaS" description="Pengaturan integrasi Bot Telegram untuk notifikasi presensi siswa ke Ortu & Guru.">
+  <!-- Page Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-xs">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <Badge variant="success" size="sm">Bot Status: ACTIVE</Badge>
+        <span class="text-xs text-slate-500">API @PresenceSchoolBot</span>
+      </div>
+      <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Telegram Bot & Notifikasi Presensi</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pengaturan auto-broadcast kehadiran ke Telegram Guru PIC & Orang Tua Siswa</p>
+    </div>
+    <Button variant="primary" size="sm">
+      Tes Koneksi Bot Telegram
+    </Button>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <!-- Bot Settings Form -->
+    <Card class="lg:col-span-1 space-y-4">
+      <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+        Konfigurasi Telegram Bot
+      </h3>
+
+      <div class="space-y-3.5">
+        <Input 
+          label="Telegram Bot Token" 
+          id="bot-token" 
+          value="6892341904:AAH781293_PresenceSchoolBot" 
+          type="password"
+        />
+
+        <Input 
+          label="Bot Username" 
+          id="bot-username" 
+          value="@PresenceSchoolBot" 
+        />
+
+        <TextArea
+          label="Template Pesan Notifikasi Presensi"
+          id="bot-template"
+          rows={3}
+          value="Halo Bpk/Ibu, {NAMA_SISWA} ({KELAS}) telah Tap Presensi {STATUS} pukul {WAKTU} WIB."
+          helperText="Variabel: {NAMA_SISWA}, {KELAS}, {WAKTU}, {STATUS}"
+        />
+
+        <div class="space-y-2">
+          <label class="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Trigger Notifikasi Otomatis</label>
+          <div class="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked class="rounded border-slate-300 dark:border-slate-700 text-blue-600" />
+              <span>Presensi Masuk (Ortu & Guru)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked class="rounded border-slate-300 dark:border-slate-700 text-blue-600" />
+              <span>Keterlambatan Siswa (Guru PIC)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked class="rounded border-slate-300 dark:border-slate-700 text-blue-600" />
+              <span>Absen Tanpa Keterangan / Alpa (Ortu)</span>
+            </label>
+          </div>
+        </div>
+
+        <Button variant="primary" size="sm" class="w-full">
+          Simpan Konfigurasi Bot
+        </Button>
+      </div>
+    </Card>
+
+    <!-- Notification Logs Table -->
+    <Card class="lg:col-span-2 overflow-hidden p-0">
+      <div class="p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+        <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">History Log Broadcast Telegram</h3>
+        <Badge variant="info" size="sm">Hari Ini: 17,240 Sent</Badge>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+              <th class="py-3 px-4 font-semibold">Siswa & Sekolah</th>
+              <th class="py-3 px-4 font-semibold">Penerima & Role</th>
+              <th class="py-3 px-4 font-semibold">Jenis Pesan</th>
+              <th class="py-3 px-4 font-semibold">Waktu Sent</th>
+              <th class="py-3 px-4 font-semibold text-right">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+            {mockTelegramLogs.map((log) => (
+              <tr class="group hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                <td class="py-3 px-4">
+                  <p class="font-semibold text-xs text-slate-900 dark:text-slate-100">{log.studentName}</p>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400">{log.schoolName}</p>
+                </td>
+                <td class="py-3 px-4">
+                  <p class="text-xs font-medium text-slate-800 dark:text-slate-200">{log.recipientName}</p>
+                  <span class="inline-block text-[10px] px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+                    {log.recipientRole}
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-xs text-slate-700 dark:text-slate-300 font-medium">
+                  {log.messageType}
+                </td>
+                <td class="py-3 px-4 text-xs text-slate-500 dark:text-slate-400 font-mono">
+                  {log.sentTime}
+                </td>
+                <td class="py-3 px-4 text-right">
+                  <Badge variant="success" size="sm">Delivered</Badge>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Pagination
+        client:load
+        currentPage={1}
+        totalPages={1}
+        totalItems={mockTelegramLogs.length}
+        itemsPerPage={10}
+        onPageChange={() => {}}
+      />
+    </Card>
+  </div>
+</DashboardLayout>

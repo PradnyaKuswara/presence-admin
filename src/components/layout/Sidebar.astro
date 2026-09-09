@@ -1,0 +1,7 @@
+---
+import SidebarReact from './Sidebar';
+
+const currentPath = Astro.url.pathname;
+---
+
+<SidebarReact client:load currentPath={currentPath} />

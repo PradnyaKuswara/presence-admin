@@ -1,0 +1,42 @@
+---
+import '../styles/global.css';
+import { LOCAL_STORAGE_KEYS } from '../constants';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { 
+  title = "PresenceAdmin - Portal Presensi & Manajemen Karyawan", 
+  description = "Sistem manajemen presensi dan sumber daya manusia berstandar enterprise." 
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="description" content={description} />
+  <title>{title}</title>
+  
+  <!-- Google Fonts: Geist & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script is:inline define:vars={{ themeKey: LOCAL_STORAGE_KEYS.THEME }}>
+    // Light mode as default; dark mode if explicitly set in localStorage
+    if (localStorage.getItem(themeKey) === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased min-h-screen">
+  <slot />
+</body>
+</html>

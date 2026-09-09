@@ -1,0 +1,17 @@
+---
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+import SchoolStudentManager from '../features/students/SchoolStudentManager';
+---
+
+<DashboardLayout title="Master Data Siswa - PresenceSaaS" description="Database siswa per sekolah, ID Kartu RFID, dan Notifikasi Telegram.">
+  <!-- Page Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-xs">
+    <div>
+      <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Master Data Siswa</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pilih sekolah terlebih dahulu untuk melihat & menambahkan siswa di sekolah tersebut</p>
+    </div>
+  </div>
+
+  <!-- Interactive School & Student Workspace Component (React) -->
+  <SchoolStudentManager client:load />
+</DashboardLayout>

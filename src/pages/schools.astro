@@ -1,0 +1,112 @@
+---
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+import Card from '../components/card/Card.astro';
+import Badge from '../components/badge/Badge.astro';
+import Button from '../components/button/Button.astro';
+import Input from '../components/input/Input.astro';
+import Select from '../components/input/Select.astro';
+import Pagination from '../components/pagination/Pagination';
+import { mockSchools } from '../data/mockSaaSData';
+---
+
+<DashboardLayout title="Master Data Sekolah - PresenceSaaS" description="Kelola data sekolah terdaftar dalam platform PresenceSaaS.">
+  <!-- Page Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-xs">
+    <div>
+      <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Master Data Sekolah</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Daftar sekolah terdaftar & status perangkat RFID Tap Presensi</p>
+    </div>
+    <Button variant="primary" size="sm">
+      <svg slot="icon-left" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      Tambah Sekolah Baru
+    </Button>
+  </div>
+
+  <!-- Filter & Search Bar -->
+  <Card class="flex flex-col sm:flex-row items-center justify-between gap-3 p-4">
+    <div class="w-full sm:w-72">
+      <Input id="search-sekolah" placeholder="Cari Nama Sekolah / NPSN..." />
+    </div>
+
+    <div class="flex items-center gap-2 w-full sm:w-auto">
+      <Select
+        id="filter-jenjang"
+        options={[
+          { value: 'all', label: 'Semua Jenjang (SD, SMP, SMA/SMK)' },
+          { value: 'SD', label: 'SD' },
+          { value: 'SMP', label: 'SMP' },
+          { value: 'SMA', label: 'SMA' },
+          { value: 'SMK', label: 'SMK' }
+        ]}
+      />
+    </div>
+  </Card>
+
+  <!-- Schools Data Table -->
+  <Card class="overflow-hidden p-0">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr class="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+            <th class="py-3 px-4 font-semibold">Nama Sekolah & NPSN</th>
+            <th class="py-3 px-4 font-semibold">Jenjang & Kota</th>
+            <th class="py-3 px-4 font-semibold">Total Siswa & Kelas</th>
+            <th class="py-3 px-4 font-semibold">Admin Sekolah</th>
+            <th class="py-3 px-4 font-semibold">Mesin Presensi RFID</th>
+            <th class="py-3 px-4 font-semibold text-right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+          {mockSchools.map((sch) => (
+            <tr class="group hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+              <td class="py-3.5 px-4">
+                <p class="font-semibold text-xs text-slate-900 dark:text-slate-100">{sch.name}</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">NPSN: {sch.npsn}</p>
+              </td>
+              <td class="py-3.5 px-4">
+                <span class="inline-block text-[11px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 font-medium">
+                  {sch.level}
+                </span>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{sch.city}</p>
+              </td>
+              <td class="py-3.5 px-4">
+                <p class="text-xs font-semibold text-slate-800 dark:text-slate-200">{sch.totalStudents} Siswa</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">{sch.totalClasses} Rombel/Kelas</p>
+              </td>
+              <td class="py-3.5 px-4">
+                <p class="text-xs font-medium text-slate-800 dark:text-slate-200">{sch.adminName}</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{sch.adminEmail}</p>
+              </td>
+              <td class="py-3.5 px-4">
+                <Badge variant={sch.rfidDeviceStatus === 'online' ? 'success' : 'danger'} size="sm">
+                  {sch.rfidDeviceStatus === 'online' ? 'Device Online' : 'Device Offline'}
+                </Badge>
+              </td>
+              <td class="py-3.5 px-4 text-right">
+                <div class="flex items-center justify-end gap-1.5">
+                  <button class="px-2.5 py-1 text-xs rounded-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    Detail
+                  </button>
+                  <button class="px-2.5 py-1 text-xs rounded-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    Edit
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <Pagination
+      client:load
+      currentPage={1}
+      totalPages={1}
+      totalItems={mockSchools.length}
+      itemsPerPage={10}
+      onPageChange={() => {}}
+    />
+  </Card>
+</DashboardLayout>

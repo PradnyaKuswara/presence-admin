@@ -1,0 +1,58 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+interface Props extends Omit<HTMLAttributes<'input'>, 'type'> {
+  label?: string;
+  id: string;
+  type?: HTMLAttributes<'input'>['type'];
+  placeholder?: string;
+  value?: string;
+  error?: string;
+  helperText?: string;
+  required?: boolean;
+  class?: string;
+  [key: string]: any;
+}
+
+const {
+  label,
+  id,
+  type = 'text',
+  placeholder = '',
+  value = '',
+  error,
+  helperText,
+  required = false,
+  class: className = '',
+  ...rest
+} = Astro.props;
+---
+
+<div class={`flex flex-col gap-1.5 ${className}`}>
+  {label && (
+    <label for={id} class="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+      {label} {required && <span class="text-rose-500">*</span>}
+    </label>
+  )}
+  <div class="relative flex items-center">
+    <slot name="icon" />
+    <input
+      type={type}
+      id={id}
+      name={id}
+      value={value}
+      placeholder={placeholder}
+      required={required}
+      class:list={[
+        "w-full bg-white dark:bg-slate-900 border rounded-md px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 transition-colors focus:outline-none focus:ring-2",
+        Astro.slots.has('icon') ? "pl-9" : "",
+        error
+          ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/20"
+          : "border-slate-300 dark:border-slate-700 focus:border-blue-600 focus:ring-blue-600/20 hover:border-slate-400 dark:hover:border-slate-600"
+      ]}
+      {...rest}
+    />
+  </div>
+  {error && <p class="text-xs text-rose-600 dark:text-rose-400 font-medium">{error}</p>}
+  {helperText && !error && <p class="text-xs text-slate-500 dark:text-slate-400">{helperText}</p>}
+</div>

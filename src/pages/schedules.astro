@@ -1,0 +1,8 @@
+---
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+import { ScheduleManager } from '../features/schedules/ScheduleManager';
+---
+
+<DashboardLayout title="Master Jam & Jadwal Presensi - PresenceSaaS" description="Pengaturan jam masuk, toleransi keterlambatan, jam pulang, dan shift presensi per sekolah, tahun ajaran, dan kelas.">
+  <ScheduleManager client:load />
+</DashboardLayout>

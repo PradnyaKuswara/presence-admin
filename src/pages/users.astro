@@ -1,0 +1,8 @@
+---
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+import { UserManager } from '../features/users/UserManager';
+---
+
+<DashboardLayout title="Master Data User & Akses Login - Presence SaaS" description="Pengelolaan user admin, operator sekolah, dan wali siswa.">
+  <UserManager client:load />
+</DashboardLayout>
