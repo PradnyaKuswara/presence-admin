@@ -2,6 +2,7 @@
 import BaseLayout from './BaseLayout.astro';
 import Sidebar from '../components/layout/Sidebar.astro';
 import Header from '../components/layout/Header.astro';
+import { QueryProvider } from '../rests';
 
 interface Props {
   title?: string;
@@ -12,15 +13,30 @@ const { title, description } = Astro.props;
 ---
 
 <BaseLayout title={title} description={description}>
-  <div class="min-h-screen flex bg-slate-50 dark:bg-slate-950">
-    <Sidebar />
+  <QueryProvider client:load>
+    <div class="min-h-screen flex bg-slate-50 dark:bg-slate-950">
+      <Sidebar />
 
-    <div class="flex-1 flex flex-col min-w-0">
-      <Header />
+      <div class="flex-1 flex flex-col min-w-0">
+        <Header />
 
-      <main class="p-5 md:p-6 space-y-5 flex-1 max-w-7xl w-full mx-auto">
-        <slot />
-      </main>
+        <main class="p-5 md:p-6 space-y-5 flex-1 max-w-7xl w-full mx-auto">
+          <slot />
+        </main>
+      </div>
     </div>
-  </div>
+  </QueryProvider>
+
+  <script>
+    import { userStore } from '../hooks/useUserData';
+
+    (async () => {
+      const isValid = await userStore.validateAuth();
+      if (!isValid) {
+        window.location.href = '/';
+      }
+    })();
+  </script>
 </BaseLayout>
+
+

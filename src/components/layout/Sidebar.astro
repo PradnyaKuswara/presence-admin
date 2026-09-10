@@ -1,7 +1,10 @@
 ---
 import SidebarReact from './Sidebar';
+import { QueryProvider } from '../../rests/QueryProvider';
 
 const currentPath = Astro.url.pathname;
 ---
 
-<SidebarReact client:load currentPath={currentPath} />
+<QueryProvider client:load>
+  <SidebarReact client:load currentPath={currentPath} />
+</QueryProvider>

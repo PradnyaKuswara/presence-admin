@@ -3,11 +3,13 @@ import React from 'react';
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
+  isLoading?: boolean;
+  loadingText?: string;
   iconLeft?: React.ReactNode;
   iconRight?: React.ReactNode;
 }
 
-const baseStyles = "inline-flex items-center justify-center font-medium rounded-md transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs active:scale-[0.99]";
+const baseStyles = "inline-flex items-center justify-center font-medium rounded-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-xs active:scale-[0.99] gap-2";
 
 const variants = {
   primary: "bg-blue-600 hover:bg-blue-700 text-white border border-blue-700/20",
@@ -23,11 +25,20 @@ const sizes = {
   lg: "px-5 py-2.5 text-base gap-2"
 };
 
+const spinnerSizes = {
+  sm: "w-3.5 h-3.5",
+  md: "w-4 h-4",
+  lg: "w-5 h-5"
+};
+
 export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   size = 'md',
   type = 'button',
   className = '',
+  isLoading = false,
+  loadingText,
+  disabled,
   iconLeft,
   iconRight,
   children,
@@ -36,12 +47,24 @@ export const Button: React.FC<ButtonProps> = ({
   return (
     <button
       type={type}
+      disabled={disabled || isLoading}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
-      {iconLeft}
-      {children}
-      {iconRight}
+      <span className={`btn-spinner ${isLoading ? 'inline-block' : 'hidden'}`}>
+        <svg className={`animate-spin ${spinnerSizes[size]}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </span>
+      <span className={`btn-content inline-flex items-center justify-center gap-2 ${isLoading ? 'hidden' : ''}`}>
+        {iconLeft && <span className="btn-icon-left inline-flex items-center">{iconLeft}</span>}
+        <span className="btn-text">{children}</span>
+        {iconRight && <span className="btn-icon-right inline-flex items-center">{iconRight}</span>}
+      </span>
+      {/* {isLoading && (
+        <span className="btn-loading-text">{loadingText || 'Memproses...'}</span>
+      )} */}
     </button>
   );
 };

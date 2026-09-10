@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useUserData } from '../../hooks/useUserData';
+import { useAuth } from '../../rests/useAuth';
+import { getInitials } from '../../helpers/string'
 
 export interface NavItem {
   label: string;
@@ -47,46 +50,30 @@ const navGroups: NavGroup[] = [
         icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
       },
       {
-        label: 'Data User',
-        href: '/users',
-        icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
-        badge: '6 User',
-        badgeVariant: 'purple',
-      },
-      {
-        label: 'Kelas & Rombel',
+        label: 'Kelas Sekolah',
         href: '/classes',
-        icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+        icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
       },
       {
-        label: 'Jadwal Jam Presensi',
+        label: 'Jadwal Presensi',
         href: '/schedules',
         icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
-        badge: 'Shift',
-        badgeVariant: 'amber',
       },
     ],
   },
   {
-    category: 'Presensi & Notifikasi',
+    category: 'Manajemen Sistem',
     items: [
       {
-        label: 'Presensi & Rekap',
-        href: '#',
-        icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+        label: 'Pengguna & Akses',
+        href: '/users',
+        icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
       },
       {
-        label: 'Telegram Bot & Notif',
+        label: 'Notifikasi Telegram',
         href: '/telegram',
         icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
-        badge: 'Online',
-        badgeVariant: 'emerald',
       },
-    ],
-  },
-  {
-    category: 'Sistem',
-    items: [
       {
         label: 'Pengaturan SaaS',
         href: '#',
@@ -104,6 +91,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath = '' }) => {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [activePath, setActivePath] = useState<string>(currentPath);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+
+  const { user } = useUserData();
+  const { logout: handleLogout, isLoggingOut } = useAuth();
 
   // Initialize collapse state from localStorage on client side
   useEffect(() => {
@@ -208,8 +198,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath = '' }) => {
                       {/* Icon */}
                       <svg
                         className={`w-5 h-5 shrink-0 transition-colors ${isActive
-                            ? 'text-blue-600 dark:text-blue-400'
-                            : 'text-slate-400 dark:text-slate-500 group-hover/tooltip:text-slate-700 dark:group-hover/tooltip:text-slate-200'
+                          ? 'text-blue-600 dark:text-blue-400'
+                          : 'text-slate-400 dark:text-slate-500 group-hover/tooltip:text-slate-700 dark:group-hover/tooltip:text-slate-200'
                           }`}
                         fill="none"
                         stroke="currentColor"
@@ -225,14 +215,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath = '' }) => {
                           {item.badge && (
                             <span
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 border ${item.badgeVariant === 'blue'
-                                  ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800/60'
-                                  : item.badgeVariant === 'emerald'
-                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/60'
-                                    : item.badgeVariant === 'purple'
-                                      ? 'bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800/60'
-                                      : item.badgeVariant === 'amber'
-                                        ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/60'
-                                        : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                                ? 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800/60'
+                                : item.badgeVariant === 'emerald'
+                                  ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/60'
+                                  : item.badgeVariant === 'purple'
+                                    ? 'bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800/60'
+                                    : item.badgeVariant === 'amber'
+                                      ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/60'
+                                      : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
                                 }`}
                             >
                               {item.badge}
@@ -286,31 +276,53 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath = '' }) => {
         >
           <div className="flex items-center gap-3 overflow-hidden">
             <div className="relative">
-              <div className="w-8 h-8 rounded-lg bg-linear-to-br from-blue-600 to-indigo-700 flex items-center justify-center font-bold text-xs text-white shrink-0 shadow-xs">
-                SA
-              </div>
+              {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.fullName || 'User Avatar'}
+                  className="w-8 h-8 rounded-lg object-cover shrink-0 shadow-xs"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-linear-to-br from-blue-600 to-indigo-700 flex items-center justify-center font-bold text-xs text-white shrink-0 shadow-xs">
+                  {getInitials(user.fullName)}
+                </div>
+              )}
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full" />
             </div>
             {!isCollapsed && (
               <div className="truncate min-w-0">
-                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">Super Admin</p>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">superadmin@presence.id</p>
+                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                  {user.fullName || 'Super Admin'}
+                </p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
+                  {user.email || 'superadmin@presence.id'}
+                </p>
               </div>
             )}
           </div>
 
           {!isCollapsed && (
-            <a
-              href="/"
+            <button
+              type="button"
+              onClick={() => handleLogout()}
+              disabled={isLoggingOut}
               title="Logout"
-              className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+              className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors disabled:opacity-50 cursor-pointer"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </a>
+              {isLoggingOut ? (
+                <svg className="w-4 h-4 animate-spin text-rose-600" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              )}
+            </button>
           )}
         </div>
+
       </div>
     </aside>
   );

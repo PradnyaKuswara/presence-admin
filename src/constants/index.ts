@@ -6,10 +6,12 @@
 // LocalStorage Keys
 export const LOCAL_STORAGE_KEYS = {
   THEME: 'theme',
-  AUTH_TOKEN: 'presence_auth_token',
+  AUTH_TOKEN: 'AUTH_TOKEN',
+  USER_LOGGED_IN: 'user_logged_in',
   USER_SESSION: 'presence_user_session',
   ACTIVE_ACADEMIC_YEAR: 'presence_active_academic_year',
 } as const;
+
 
 // System User Roles
 export const USER_ROLES = {

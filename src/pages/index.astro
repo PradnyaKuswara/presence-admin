@@ -1,10 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Input from '../components/input/Input.astro';
-import Button from '../components/button/Button.astro';
+import Button from '../components/button/Button';
 import ThemeToggle from '../components/layout/ThemeToggle';
 ---
-
 <BaseLayout title="Login - PresenceSaaS" description="Masuk ke portal PresenceSaaS untuk mengelola presensi siswa sekolah.">
   <main class="min-h-screen flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 relative">
     <div class="absolute top-4 right-4">
@@ -17,16 +16,16 @@ import ThemeToggle from '../components/layout/ThemeToggle';
       <div class="text-center mb-6">
         <div class="inline-flex items-center justify-center w-12 h-12 rounded-md bg-blue-600 shadow-xs mb-3">
           <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
           </svg>
         </div>
         <h1 class="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Selamat Datang Kembali</h1>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Masuk ke portal <span class="text-blue-600 dark:text-blue-400 font-semibold">PresenceSaaS</span></p>
       </div>
 
-      <!-- Login Card (Material UI Clean Solid Card) -->
+      <!-- Login Card -->
       <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-6 shadow-xs">
-        <form action="/dashboard" method="GET" class="space-y-4">
+        <form id="login-form" class="space-y-4">
           <Input 
             label="Email Super Admin" 
             id="email" 
@@ -59,7 +58,7 @@ import ThemeToggle from '../components/layout/ThemeToggle';
             <a href="#" class="text-blue-600 dark:text-blue-400 hover:underline font-medium">Lupa sandi?</a>
           </div>
 
-          <Button type="submit" variant="primary" size="md" class="w-full">
+          <Button type="submit" id="submit-btn" variant="primary" size="md" className="w-full">
             Masuk ke Portal
             <svg slot="icon-right" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -73,4 +72,111 @@ import ThemeToggle from '../components/layout/ThemeToggle';
       </div>
     </div>
   </main>
+
+  <script>
+    import ApiService, { type ApiResponse } from "../services/api";
+    import { toast } from "../hooks/useToast";
+    import { LOCAL_STORAGE_KEYS } from "../constants";
+    import { userStore } from "../hooks/useUserData";
+
+    // If user is already logged in and token is valid, redirect to dashboard
+    (async () => {
+      const token = localStorage.getItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN);
+      if (token) {
+        const isValid = await userStore.validateAuth();
+        if (isValid) {
+          window.location.href = "/dashboard";
+        }
+      }
+    })();
+
+    interface LoginResponseData {
+      token: string;
+    }
+
+    const form = document.getElementById("login-form") as HTMLFormElement | null;
+    const submitBtn = document.getElementById("submit-btn") as HTMLButtonElement | null;
+
+    function setButtonLoading(loading: boolean, text = "Memverifikasi...") {
+      if (!submitBtn) return;
+      submitBtn.disabled = loading;
+      const spinner = submitBtn.querySelector(".btn-spinner");
+      const btnContent = submitBtn.querySelector(".btn-content") as HTMLElement | null;
+      let loadingTextElem = submitBtn.querySelector(".btn-loading-text") as HTMLElement | null;
+
+      if (loading) {
+        if (spinner) {
+          spinner.classList.remove("hidden");
+          spinner.classList.add("inline-block");
+        }
+        if (btnContent) {
+          btnContent.classList.add("hidden");
+        }
+        if (!loadingTextElem) {
+          loadingTextElem = document.createElement("span");
+          loadingTextElem.className = "btn-loading-text";
+          submitBtn.appendChild(loadingTextElem);
+        }
+        loadingTextElem.textContent = text;
+        loadingTextElem.classList.remove("hidden");
+      } else {
+        if (spinner) {
+          spinner.classList.add("hidden");
+          spinner.classList.remove("inline-block");
+        }
+        if (btnContent) {
+          btnContent.classList.remove("hidden");
+        }
+        if (loadingTextElem) {
+          loadingTextElem.classList.add("hidden");
+        }
+      }
+    }
+
+
+    if (form) {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const emailInput = document.getElementById("email") as HTMLInputElement;
+        const passwordInput = document.getElementById(
+          "password",
+        ) as HTMLInputElement;
+
+        setButtonLoading(true, "");
+
+        try {
+          const res = await ApiService.post<ApiResponse<LoginResponseData>>(
+            "/api/auth/login/admin-global",
+            {
+              email: emailInput.value,
+              password: passwordInput.value,
+            },
+          );
+
+          const isSuccess = Boolean(res && (res.success || res.status === 200 || res.code === 200));
+          const token = res.data?.token || (res.data as any)?.access_token;
+
+          if (isSuccess && token) {
+            localStorage.setItem(LOCAL_STORAGE_KEYS.AUTH_TOKEN, token);
+            localStorage.setItem(LOCAL_STORAGE_KEYS.USER_LOGGED_IN, "true");
+            await userStore.validateAuth();
+
+            toast.success("Login berhasil! Mengalihkan...");
+            setTimeout(() => {
+              window.location.href = "/dashboard";
+            }, 800);
+          } else {
+            setButtonLoading(false);
+            toast.error(res.message || "Login gagal");
+          }
+
+        } catch (error) {
+          setButtonLoading(false);
+          const err = error as Error;
+          toast.error(err.message || "Terjadi kesalahan saat login");
+        }
+      });
+    }
+  </script>
+
 </BaseLayout>

@@ -2,7 +2,7 @@
 import DashboardLayout from '../layouts/DashboardLayout.astro';
 import Card from '../components/card/Card.astro';
 import Badge from '../components/badge/Badge.astro';
-import Button from '../components/button/Button.astro';
+import Button from '../components/button/Button';
 import Input from '../components/input/Input.astro';
 import TextArea from '../components/input/TextArea.astro';
 import Pagination from '../components/pagination/Pagination';
@@ -72,7 +72,7 @@ import { mockTelegramLogs } from '../data/mockSaaSData';
           </div>
         </div>
 
-        <Button variant="primary" size="sm" class="w-full">
+        <Button variant="primary" size="sm" className="w-full">
           Simpan Konfigurasi Bot
         </Button>
       </div>
