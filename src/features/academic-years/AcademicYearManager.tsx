@@ -1,360 +1,242 @@
 import React, { useState } from 'react';
-import { Card } from '../../components/card/Card';
-import { Badge } from '../../components/badge/Badge';
-import { Button } from '../../components/button/Button';
-import { Input } from '../../components/input';
-import { Pagination } from '../../components/pagination/Pagination';
-import { mockAcademicYears, mockSchools, AcademicYear } from '../../data/mockSaaSData';
-import { Calendar, Plus, Search, CheckCircle2, Archive } from 'lucide-react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '../../rests/queryClient';
+import {
+  useAcademicYearsQuery,
+  useDeletedAcademicYearsQuery,
+  useCreateAcademicYearMutation,
+  useUpdateAcademicYearMutation,
+  useDeleteAcademicYearMutation,
+  useSetActiveAcademicYearMutation,
+  type AcademicYear,
+} from '../../rests/useAcademicYears';
+import { useSchoolsQuery, type School } from '../../rests/useSchools';
+import { toast } from '../../hooks/useToast';
+import { AcademicYearHeader } from './AcademicYearHeader';
+import { AcademicYearTable } from './AcademicYearTable';
+import { AcademicYearFormModal } from './AcademicYearFormModal';
+import { DeleteAcademicYearModal } from './DeleteAcademicYearModal';
+import { DeletedAcademicYearsModal } from './DeletedAcademicYearsModal';
+import type { AcademicYearFormData } from './types';
 
-export const AcademicYearManager: React.FC = () => {
-  const [academicYears, setAcademicYears] = useState<AcademicYear[]>(mockAcademicYears);
-  const [selectedSchoolFilter, setSelectedSchoolFilter] = useState<string>('all');
+const AcademicYearManagerContent: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
-
-  // Form State
-  const [newSchoolId, setNewSchoolId] = useState<string>(mockSchools[0]?.id || '');
-  const [newYear, setNewYear] = useState<string>('2026/2027');
-  const [newSemester, setNewSemester] = useState<'Ganjil' | 'Genap'>('Ganjil');
-  const [newStartDate, setNewStartDate] = useState<string>('');
-  const [newEndDate, setNewEndDate] = useState<string>('');
-  const [newIsActive, setNewIsActive] = useState<boolean>(true);
-
-  // Pagination State
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
-
-  // Filter Logic
-  const filteredYears = academicYears.filter((ay) => {
-    const matchesSchool = selectedSchoolFilter === 'all' || ay.schoolId === selectedSchoolFilter;
-    const matchesSearch =
-      ay.schoolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ay.year.includes(searchTerm) ||
-      ay.semester.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSchool && matchesSearch;
-  });
-
-  const totalPages = Math.ceil(filteredYears.length / itemsPerPage) || 1;
-  const paginatedYears = filteredYears.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  const [selectedSchoolId, setSelectedSchoolId] = useState<number | undefined>(
+    undefined,
   );
 
-  const handleSetActive = (id: string, schoolId: string) => {
-    setAcademicYears(
-      academicYears.map((ay) => {
-        if (ay.schoolId === schoolId) {
-          return { ...ay, isActive: ay.id === id };
-        }
-        return ay;
-      })
-    );
+  // Modals state
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isDeletedModalOpen, setIsDeletedModalOpen] = useState<boolean>(false);
+  const [editingAcademicYear, setEditingAcademicYear] =
+    useState<AcademicYear | null>(null);
+  const [deletingAcademicYear, setDeletingAcademicYear] =
+    useState<AcademicYear | null>(null);
+  const [activatingId, setActivatingId] = useState<number | null>(null);
+
+  // Queries
+  const {
+    data: academicYearsData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useAcademicYearsQuery({
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchTerm || undefined,
+    school_id: selectedSchoolId,
+  });
+
+  const { data: deletedData } = useDeletedAcademicYearsQuery({
+    limit: 1,
+    school_id: selectedSchoolId,
+  });
+  const deletedCount = !Array.isArray(deletedData)
+    ? (deletedData as any)?.meta?.total
+    : undefined;
+
+  // Fetch schools for filter & form dropdowns
+  const { data: schoolsData } = useSchoolsQuery({ limit: 100 });
+  const schoolList: School[] = Array.isArray(schoolsData)
+    ? schoolsData
+    : (schoolsData as any)?.data || [];
+
+  // Mutations
+  const createMutation = useCreateAcademicYearMutation();
+  const updateMutation = useUpdateAcademicYearMutation();
+  const deleteMutation = useDeleteAcademicYearMutation();
+  const setActiveMutation = useSetActiveAcademicYearMutation();
+
+  const handleOpenCreateModal = () => {
+    setEditingAcademicYear(null);
+    setIsModalOpen(true);
   };
 
-  const handleAddAcademicYear = (e: React.FormEvent) => {
-    e.preventDefault();
-    const sch = mockSchools.find((s) => s.id === newSchoolId);
-    if (!sch || !newYear) return;
+  const handleOpenEditModal = (item: AcademicYear) => {
+    setEditingAcademicYear(item);
+    setIsModalOpen(true);
+  };
 
-    const createdAy: AcademicYear = {
-      id: `ay-${Date.now().toString().slice(-4)}`,
-      schoolId: sch.id,
-      schoolName: sch.name,
-      year: newYear,
-      semester: newSemester,
-      isActive: newIsActive,
-      startDate: newStartDate ? new Date(newStartDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '15 Juli 2026',
-      endDate: newEndDate ? new Date(newEndDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '20 Desember 2026',
-    };
+  const handleOpenDeleteModal = (item: AcademicYear) => {
+    setDeletingAcademicYear(item);
+  };
 
-    let updated = [createdAy, ...academicYears];
-    if (newIsActive) {
-      updated = updated.map((ay) => {
-        if (ay.schoolId === sch.id && ay.id !== createdAy.id) {
-          return { ...ay, isActive: false };
-        }
-        return ay;
-      });
+  const handleSubmitForm = async (data: AcademicYearFormData) => {
+    try {
+      if (editingAcademicYear) {
+        await updateMutation.mutateAsync({
+          id: editingAcademicYear.id,
+          ...data,
+        });
+        toast.success(`Tahun ajaran ${data.name} berhasil diperbarui`);
+      } else {
+        await createMutation.mutateAsync(data);
+        toast.success(`Tahun ajaran ${data.name} berhasil ditambahkan`);
+      }
+      setIsModalOpen(false);
+      setEditingAcademicYear(null);
+    } catch (err: any) {
+      toast.error(err?.message || 'Gagal menyimpan data tahun ajaran');
     }
-
-    setAcademicYears(updated);
-    alert(`Tahun Ajaran ${newYear} (${newSemester}) untuk ${sch.name} berhasil ditambahkan!`);
   };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingAcademicYear) return;
+
+    try {
+      await deleteMutation.mutateAsync(deletingAcademicYear.id);
+      toast.success(
+        `Tahun ajaran ${deletingAcademicYear.name} berhasil dihapus`,
+      );
+      setDeletingAcademicYear(null);
+    } catch (err: any) {
+      toast.error(err?.message || 'Gagal menghapus tahun ajaran');
+    }
+  };
+
+  const handleSetActive = async (item: AcademicYear) => {
+    try {
+      setActivatingId(item.id);
+      await setActiveMutation.mutateAsync(item.id);
+      toast.success(
+        `Tahun ajaran ${item.name} berhasil diaktifkan untuk sekolah ini`,
+      );
+    } catch (err: any) {
+      toast.error(err?.message || 'Gagal mengaktifkan tahun ajaran');
+    } finally {
+      setActivatingId(null);
+    }
+  };
+
+  // Process response data
+  const rawList: AcademicYear[] = Array.isArray(academicYearsData)
+    ? academicYearsData
+    : (academicYearsData as any)?.data || [];
+
+  const meta = !Array.isArray(academicYearsData)
+    ? (academicYearsData as any)?.meta
+    : null;
+
+  // Fallback client filter if backend not paginated
+  const filteredList = rawList.filter((item) => {
+    const term = searchTerm.toLowerCase();
+    const matchesSearch =
+      item.name.toLowerCase().includes(term) ||
+      (item.school?.name && item.school.name.toLowerCase().includes(term));
+    const matchesSchool =
+      selectedSchoolId === undefined || item.school_id === selectedSchoolId;
+    return matchesSearch && matchesSchool;
+  });
+
+  const totalItems =
+    meta?.total ?? (searchTerm ? filteredList.length : rawList.length);
+  const totalPages =
+    (meta?.last_page ?? Math.ceil(totalItems / itemsPerPage)) || 1;
+  const displayItems = meta
+    ? rawList
+    : filteredList.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage,
+      );
 
   return (
     <div className="space-y-5">
-      {/* Top Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5" /> Konfigurasi Periode KBM
-            </span>
-          </div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-            Master Tahun Ajaran Per Sekolah
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Setiap sekolah mengelola periode Tahun Ajaran & Semester efektif masing-masing untuk integrasi data presensi siswa.
-          </p>
-        </div>
+      <AcademicYearHeader
+        searchTerm={searchTerm}
+        onSearchChange={(term) => {
+          setSearchTerm(term);
+          setCurrentPage(1);
+        }}
+        selectedSchoolId={selectedSchoolId}
+        onSchoolChange={(id) => {
+          setSelectedSchoolId(id);
+          setCurrentPage(1);
+        }}
+        schools={schoolList}
+        totalItems={totalItems}
+        onOpenCreateModal={handleOpenCreateModal}
+        onOpenDeletedModal={() => setIsDeletedModalOpen(true)}
+        deletedCount={deletedCount}
+      />
 
-        <div className="flex items-center gap-2 text-xs">
-          <Badge variant="info" size="sm">
-            Total {academicYears.length} Periode Registered
-          </Badge>
-        </div>
-      </div>
+      <AcademicYearTable
+        academicYears={displayItems}
+        isLoading={isLoading}
+        isError={isError}
+        error={error}
+        refetch={refetch}
+        searchTerm={searchTerm}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
+        onPageChange={(page) => setCurrentPage(page)}
+        onItemsPerPageChange={(limit) => {
+          setItemsPerPage(limit);
+          setCurrentPage(1);
+        }}
+        onEditAcademicYear={handleOpenEditModal}
+        onDeleteAcademicYear={handleOpenDeleteModal}
+        onSetActiveAcademicYear={handleSetActive}
+        isActivatingId={activatingId}
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Form Create Academic Year */}
-        <Card className="lg:col-span-1 space-y-4 shadow-xs">
-          <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <Plus className="w-4 h-4 text-blue-600" />
-              Buat Tahun Ajaran Baru
-            </h3>
-          </div>
+      <AcademicYearFormModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingAcademicYear(null);
+        }}
+        editingAcademicYear={editingAcademicYear}
+        schools={schoolList}
+        defaultSchoolId={selectedSchoolId}
+        onSubmit={handleSubmitForm}
+        isLoading={createMutation.isPending || updateMutation.isPending}
+      />
 
-          <form onSubmit={handleAddAcademicYear} className="space-y-3.5 text-xs">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Pilih Sekolah (Tenant)
-              </label>
-              <select
-                value={newSchoolId}
-                onChange={(e) => setNewSchoolId(e.target.value)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium"
-              >
-                {mockSchools.map((sch) => (
-                  <option key={sch.id} value={sch.id}>
-                    {sch.name} ({sch.level})
-                  </option>
-                ))}
-              </select>
-            </div>
+      <DeleteAcademicYearModal
+        academicYear={deletingAcademicYear}
+        onClose={() => setDeletingAcademicYear(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={deleteMutation.isPending}
+      />
 
-            <Input
-              label="Tahun Ajaran"
-              id="ay-year"
-              placeholder="Contoh: 2026/2027"
-              value={newYear}
-              onChange={(e) => setNewYear(e.target.value)}
-              required
-            />
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Semester Efektif
-              </label>
-              <select
-                value={newSemester}
-                onChange={(e) => setNewSemester(e.target.value as 'Ganjil' | 'Genap')}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium"
-              >
-                <option value="Ganjil">Semester Ganjil</option>
-                <option value="Genap">Semester Genap</option>
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Input
-                label="Tanggal Mulai KBM"
-                id="ay-start"
-                type="date"
-                value={newStartDate}
-                onChange={(e) => setNewStartDate(e.target.value)}
-              />
-              <Input
-                label="Tanggal Selesai KBM"
-                id="ay-end"
-                type="date"
-                value={newEndDate}
-                onChange={(e) => setNewEndDate(e.target.value)}
-              />
-            </div>
-
-            <label className="flex items-center gap-2 cursor-pointer pt-1 text-slate-700 dark:text-slate-300 font-medium">
-              <input
-                type="checkbox"
-                checked={newIsActive}
-                onChange={(e) => setNewIsActive(e.target.checked)}
-                className="rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500"
-              />
-              <span>Jadikan Tahun Ajaran Aktif Sekolah</span>
-            </label>
-
-            <Button type="submit" variant="primary" size="sm" className="w-full bg-blue-600 hover:bg-blue-700 shadow-xs">
-              Simpan Tahun Ajaran
-            </Button>
-          </form>
-        </Card>
-
-        {/* Academic Years Data Table */}
-        <Card className="lg:col-span-2 overflow-hidden p-0 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 dark:border-slate-800 gap-3 bg-slate-50/50 dark:bg-slate-900/50">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-blue-600" />
-                  Daftar Tahun Ajaran Per Sekolah
-                </h3>
-                <p className="text-[11px] text-slate-500">Menampilkan {filteredYears.length} data terdaftar</p>
-              </div>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <div className="w-full sm:w-48">
-                  <Input
-                    id="search-ay"
-                    placeholder="Cari Sekolah / Tahun..."
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    icon={<Search className="w-3.5 h-3.5 text-slate-400" />}
-                  />
-                </div>
-
-                <div className="w-40 shrink-0">
-                  <select
-                    value={selectedSchoolFilter}
-                    onChange={(e) => {
-                      setSelectedSchoolFilter(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium cursor-pointer"
-                  >
-                    <option value="all">Semua Sekolah</option>
-                    {mockSchools.map((sch) => (
-                      <option key={sch.id} value={sch.id}>
-                        {sch.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/80 font-semibold">
-                    <th className="py-3.5 px-4">Sekolah / Tenant</th>
-                    <th className="py-3.5 px-4">Tahun Ajaran & Semester</th>
-                    <th className="py-3.5 px-4">Periode Efektif KBM</th>
-                    <th className="py-3.5 px-4 text-center">Status Periode</th>
-                    <th className="py-3.5 px-4 text-right">Aksi Singkat</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                  {paginatedYears.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-8 text-center text-slate-400">
-                        Tidak ada data tahun ajaran yang cocok.
-                      </td>
-                    </tr>
-                  ) : (
-                    paginatedYears.map((ay) => {
-                      const schoolObj = mockSchools.find((s) => s.id === ay.schoolId || s.name === ay.schoolName);
-
-                      return (
-                        <tr key={ay.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                          {/* School Info */}
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-md bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 font-bold text-xs flex items-center justify-center shrink-0">
-                                {schoolObj?.level || 'SCH'}
-                              </div>
-                              <div>
-                                <p className="font-bold text-slate-900 dark:text-slate-100 text-xs">{ay.schoolName}</p>
-                                <p className="text-[10px] text-slate-400 font-mono">NPSN: {schoolObj?.npsn || '-'}</p>
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Year & Semester */}
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-900 dark:text-slate-100 text-xs">
-                                {ay.year}
-                              </span>
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
-                                ay.semester === 'Ganjil'
-                                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800'
-                                  : 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800'
-                              }`}>
-                                Semester {ay.semester}
-                              </span>
-                            </div>
-                          </td>
-
-                          {/* Periode KBM */}
-                          <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                            <div className="flex items-center gap-1.5">
-                              <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                              <span>{ay.startDate} – {ay.endDate}</span>
-                            </div>
-                          </td>
-
-                          {/* Status */}
-                          <td className="py-3.5 px-4 text-center">
-                            {ay.isActive ? (
-                              <Badge variant="success" size="sm">
-                                <span className="flex items-center gap-1">
-                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Aktif
-                                </span>
-                              </Badge>
-                            ) : (
-                              <Badge variant="neutral" size="sm">
-                                <span className="flex items-center gap-1 text-slate-400">
-                                  <Archive className="w-3 h-3" /> Arsip
-                                </span>
-                              </Badge>
-                            )}
-                          </td>
-
-                          {/* Action */}
-                          <td className="py-3.5 px-4 text-right">
-                            {!ay.isActive ? (
-                              <button
-                                onClick={() => handleSetActive(ay.id, ay.schoolId)}
-                                className="px-2.5 py-1 text-[11px] font-semibold rounded-md border border-blue-300 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors cursor-pointer inline-flex items-center gap-1"
-                              >
-                                Set Aktif
-                              </button>
-                            ) : (
-                              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold italic">
-                                Sedang Aktif
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={filteredYears.length}
-              itemsPerPage={itemsPerPage}
-              onPageChange={(p) => setCurrentPage(p)}
-              onItemsPerPageChange={(items) => {
-                setItemsPerPage(items);
-                setCurrentPage(1);
-              }}
-              pageSizeOptions={[5, 10, 20]}
-            />
-          </div>
-        </Card>
-      </div>
+      <DeletedAcademicYearsModal
+        isOpen={isDeletedModalOpen}
+        onClose={() => setIsDeletedModalOpen(false)}
+      />
     </div>
+  );
+};
+
+export const AcademicYearManager: React.FC = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AcademicYearManagerContent />
+    </QueryClientProvider>
   );
 };
 
